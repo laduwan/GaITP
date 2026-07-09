@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA Integrated Therapeutic Perspectives | Counseling in Hinesville, GA</title>
+<meta name="description" content="Individual and couples therapy with Kejuiana Johnson, LPC, NCC, CPCS, BC-TMH. Virtual sessions across GA, FL, ID &amp; TX, and in-office in Hinesville, GA.">
+<style>
+/* =========================================================
+   GA Integrated Therapeutic Perspectives — Design System
+   Palette: grounded warm earth — clay, sage, parchment, ochre
+   Type: Frank Ruhl Libre (display) + Karla (body)
+   Signature: contour-line motif — topographic lines standing
+   in for "finding your ground" / integration of perspectives
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Karla:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Color */
+  --bg:        #EFE6D8; /* warm parchment */
+  --bg-card:   #F8F2E7; /* lifted cream */
+  --bg-deep:   #E4D8C4; /* recessed panel */
+  --ink:       #2E2A24; /* near-black warm charcoal */
+  --ink-soft:  #6B6252; /* secondary text */
+  --clay:      #B5563A; /* deep terracotta — primary accent */
+  --clay-dark: #8F4029;
+  --sage:      #6B7A5E; /* muted sage — secondary accent */
+  --sage-dark: #4F5D45;
+  --ochre:     #C9973A; /* warm gold — tertiary accent */
+  --line:      #D9CBB3; /* hairline / borders */
+  --white:     #FFFDF9;
+
+  /* Type */
+  --font-display: 'Frank Ruhl Libre', Georgia, serif;
+  --font-body: 'Karla', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Scale */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+  --space-6: 6.5rem;
+
+  --radius: 3px;
+  --max-width: 1140px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--clay); text-decoration: none; }
+a:hover { color: var(--clay-dark); text-decoration: underline; }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--sage-dark);
+  outline-offset: 3px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 var(--space-2);
+  color: var(--ink);
+}
+
+h1 { font-size: clamp(2.4rem, 5vw, 3.6rem); font-weight: 900; }
+h2 { font-size: clamp(1.7rem, 3vw, 2.3rem); }
+h3 { font-size: 1.3rem; }
+
+p { margin: 0 0 var(--space-2); color: var(--ink-soft); max-width: 62ch; }
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: var(--sage-dark);
+  display: inline-block;
+  margin-bottom: var(--space-1);
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-3);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: var(--radius);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover { text-decoration: none; transform: translateY(-1px); }
+
+.btn-primary { background: var(--clay); color: var(--white); }
+.btn-primary:hover { background: var(--clay-dark); color: var(--white); }
+
+.btn-outline { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn-outline:hover { background: var(--ink); color: var(--white); }
+
+.btn-sage { background: var(--sage); color: var(--white); }
+.btn-sage:hover { background: var(--sage-dark); color: var(--white); }
+
+/* ---------- Nav ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(239, 230, 216, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 0;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.brand span { color: var(--clay); }
+.brand:hover { text-decoration: none; color: var(--ink); }
+
+.nav-links {
+  display: flex;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+.nav-links a {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.nav-links a:hover { color: var(--clay); text-decoration: none; }
+.nav-links a.active { color: var(--clay); }
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+@media (max-width: 820px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border-bottom: 1px solid var(--line);
+    gap: var(--space-2);
+  }
+  .nav-links.open { display: flex; }
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  padding: var(--space-6) 0 var(--space-5);
+  overflow: hidden;
+}
+
+.hero-contour {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.hero-inner {
+  max-width: 700px;
+}
+
+.hero-art {
+  display: flex;
+  justify-content: center;
+}
+.hero-art svg { width: 100%; max-width: 380px; height: auto; }
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-art { order: -1; max-width: 280px; margin: 0 auto var(--space-2); }
+}
+
+/* Service card icons */
+.card-icon {
+  width: 46px;
+  height: 46px;
+  margin-bottom: var(--space-2);
+  color: var(--clay);
+}
+.card-icon svg { width: 100%; height: 100%; }
+.card-icon.sage { color: var(--sage-dark); }
+.card-icon.ochre { color: var(--ochre); }
+
+/* Botanical section accent */
+.botanical-accent {
+  display: block;
+  width: 60px;
+  height: auto;
+  margin: 0 auto var(--space-2);
+  color: var(--sage);
+}
+
+.hero p.lede {
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+  margin-bottom: var(--space-3);
+}
+
+.hero-cta { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+.credential-strip {
+  margin-top: var(--space-4);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-2);
+}
+.credential-strip strong { color: var(--ink); }
+
+/* ---------- Contour divider ---------- */
+.contour-divider {
+  display: block;
+  width: 100%;
+  height: 48px;
+  color: var(--sage);
+  opacity: 0.5;
+}
+
+/* ---------- Sections ---------- */
+section { padding: var(--space-5) 0; }
+.section-alt { background: var(--bg-deep); }
+
+.section-head { max-width: 640px; margin-bottom: var(--space-4); }
+
+.grid {
+  display: grid;
+  gap: var(--space-3);
+}
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 820px) {
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+.card h3 { margin-bottom: 0.5rem; }
+.card p { margin-bottom: 0; }
+
+.tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sage-dark);
+  background: rgba(107, 122, 94, 0.12);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+
+/* ---------- Book / product cards ---------- */
+.book-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.book-cover {
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(160deg, var(--sage) 0%, var(--sage-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  text-align: center;
+  padding: var(--space-2);
+}
+.book-body { padding: var(--space-3); flex: 1; display: flex; flex-direction: column; }
+.book-price { font-weight: 700; color: var(--clay-dark); margin: var(--space-1) 0 var(--space-2); }
+
+/* ---------- FAQ ---------- */
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-item summary {
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: var(--space-2) 0;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+';
+  font-size: 1.5rem;
+  color: var(--clay);
+  font-weight: 400;
+  margin-left: var(--space-2);
+}
+.faq-item[open] summary::after { content: '2'; }
+.faq-item .faq-a { padding-bottom: var(--space-3); }
+
+/* ---------- Forms ---------- */
+label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+input, textarea, select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+input:focus, textarea:focus, select:focus { border-color: var(--sage-dark); outline: none; }
+
+.form-note {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: var(--bg-deep);
+  border-left: 3px solid var(--ochre);
+  padding: var(--space-2);
+  border-radius: var(--radius);
+}
+
+/* ---------- CTA band ---------- */
+.cta-band {
+  background: var(--sage-dark);
+  color: var(--white);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  text-align: center;
+}
+.cta-band h2, .cta-band p { color: var(--white); margin-left: auto; margin-right: auto; }
+.cta-band p { max-width: 50ch; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--ink);
+  color: #D9CFC0;
+  padding: var(--space-5) 0 var(--space-3);
+  margin-top: var(--space-5);
+}
+.site-footer a { color: #D9CFC0; }
+.site-footer a:hover { color: var(--ochre); }
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+@media (max-width: 820px) {
+  .footer-grid { grid-template-columns: 1fr; gap: var(--space-3); }
+}
+.footer-grid h4 { color: var(--white); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.footer-grid ul { list-style: none; margin: 0; padding: 0; }
+.footer-grid li { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.footer-bottom {
+  border-top: 1px solid rgba(217, 207, 192, 0.2);
+  padding-top: var(--space-2);
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  color: #A99E8A;
+}
+
+/* ---------- Page header (interior pages) ---------- */
+.page-header {
+  padding: var(--space-5) 0 var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+.page-header .eyebrow { margin-bottom: var(--space-1); }
+
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav container">
+    <a href="index.html" class="brand">GA Integrated <span>Therapeutic</span> Perspectives</a>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Resources</a></li>
+      <li><a href="bookstore.html">Bookstore</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html" class="btn btn-primary">Book a Consult</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="hero">
+  <svg class="hero-contour" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M-50,120 C 200,60 400,180 650,110 S 1100,40 1250,100" fill="none" stroke="#6B7A5E" stroke-width="1.5"/>
+    <path d="M-50,190 C 220,140 420,260 680,190 S 1120,120 1250,180" fill="none" stroke="#6B7A5E" stroke-width="1.5"/>
+    <path d="M-50,260 C 240,220 440,340 700,270 S 1140,200 1250,260" fill="none" stroke="#B5563A" stroke-width="1.5"/>
+    <path d="M-50,330 C 260,300 460,420 720,350 S 1160,280 1250,340" fill="none" stroke="#6B7A5E" stroke-width="1.5"/>
+    <path d="M-50,400 C 280,380 480,480 740,420 S 1180,360 1250,410" fill="none" stroke="#C9973A" stroke-width="1.5"/>
+  </svg>
+  <div class="container hero-grid">
+    <div class="hero-inner">
+      <span class="eyebrow">Hinesville, GA &middot; Licensed in GA, FL, ID &amp; TX</span>
+      <h1>Therapy that meets you where the ground shifts.</h1>
+      <p class="lede">Individual and couples counseling for anxiety, grief, trauma, and the life transitions that don&rsquo;t come with a map &mdash; with Kejuiana Johnson, LPC, NCC, CPCS, BC-TMH.</p>
+      <div class="hero-cta">
+        <a href="contact.html" class="btn btn-primary">Book a Free Consult</a>
+        <a href="services.html" class="btn btn-outline">See Services</a>
+      </div>
+      <div class="credential-strip">
+        <span><strong>LPC</strong> Licensed Professional Counselor</span>
+        <span><strong>NCC</strong> Nationally Certified Counselor</span>
+        <span><strong>CPCS</strong> Certified Professional Counselor Supervisor</span>
+        <span><strong>BC-TMH</strong> Board Certified in TeleMental Health</span>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="roundel"><circle cx="200" cy="200" r="190"/></clipPath>
+        </defs>
+        <circle cx="200" cy="200" r="190" fill="#F3E9DA"/>
+        <g clip-path="url(#roundel)">
+          <circle cx="200" cy="150" r="66" fill="#E9B84A" opacity="0.85"/>
+          <circle cx="200" cy="150" r="90" fill="none" stroke="#E9B84A" stroke-width="1.2" opacity="0.5"/>
+          <circle cx="200" cy="150" r="112" fill="none" stroke="#E9B84A" stroke-width="1.2" opacity="0.32"/>
+          <path d="M0,300 C 90,258 150,300 220,286 C 300,270 350,300 400,286 L400,400 L0,400 Z" fill="#8A9A7B"/>
+          <path d="M0,330 C 110,296 180,336 260,322 C 330,310 372,332 400,322 L400,400 L0,400 Z" fill="#6B7A5E"/>
+          <path d="M0,360 C 120,336 200,368 280,356 C 340,348 380,362 400,356 L400,400 L0,400 Z" fill="#B5563A"/>
+          <path d="M20,300 C 120,272 200,306 280,292" fill="none" stroke="#F3E9DA" stroke-width="1.4" opacity="0.5"/>
+          <path d="M40,336 C 140,314 220,342 300,330" fill="none" stroke="#F3E9DA" stroke-width="1.4" opacity="0.4"/>
+        </g>
+        <circle cx="200" cy="200" r="190" fill="none" stroke="#D9CBB3" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">How I can help</span>
+      <h2>Support built around where you actually are.</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 40C24 40 8 30 8 19C8 13 12 10 16 10C20 10 24 14 24 14C24 14 28 10 32 10C36 10 40 13 40 19C40 30 24 40 24 40Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 22H20L22 18L26 26L28 22H34" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="tag">Individual</span>
+        <h3>Anxiety, Grief &amp; Trauma</h3>
+        <p>Evidence-based approaches &mdash; CBT, DBT, and Solution-Focused Therapy &mdash; for anxiety, depression, grief, and moderate trauma.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon sage" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="18" r="9" stroke="currentColor" stroke-width="2"/><circle cx="30" cy="18" r="9" stroke="currentColor" stroke-width="2"/><path d="M10 40C10 34 13 31 18 31M38 40C38 34 35 31 30 31" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <span class="tag">Couples</span>
+        <h3>Relationship &amp; Life Transitions</h3>
+        <p>Individual and couples sessions for relationship strain, major life transitions, and the identity questions that come with them.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon ochre" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 40V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M24 26C24 26 18 26 15 22C12 18 14 12 14 12C14 12 21 13 23 17C25 21 24 26 24 26Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M24 22C24 22 29 22 32 19C35 16 33 10 33 10C33 10 27 11 25 15C23 19 24 22 24 22Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 40H32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <span class="tag">Clinical Supervision</span>
+        <h3>Supervision for Counselors</h3>
+        <p>CPCS-certified supervision for counselors working toward full licensure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-alt">
+  <div class="container grid grid-2" style="align-items:center;">
+    <div>
+      <span class="eyebrow">About Ke</span>
+      <h2>Grounded, direct, and genuinely in your corner.</h2>
+      <p>I&rsquo;m Kejuiana Johnson &mdash; LPC, NCC, CPCS, BC-TMH &mdash; and I&rsquo;ve built this practice around one idea: therapy should feel like solid ground, not another performance. Sessions are available virtually across Georgia, Florida, Idaho, and Texas, and in-office in Hinesville, GA.</p>
+      <a href="about.html" class="btn btn-outline">More about Ke &rarr;</a>
+    </div>
+    <div class="card" style="background:var(--bg-card);">
+      <h3>Getting started is simple</h3>
+      <p>Book a free virtual consult, tell me what&rsquo;s bringing you in, and we&rsquo;ll figure out together whether this is the right fit &mdash; no pressure, no obligation.</p>
+      <a href="contact.html" class="btn btn-primary">Book a Free Consult</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="cta-band">
+      <h2>Ready to talk to someone?</h2>
+      <p>Virtual consultations are available now. Reach out and we&rsquo;ll find a time that works.</p>
+      <a href="contact.html" class="btn btn-primary">Book a Free Consult</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div style="background:rgba(181,86,58,0.15); border:1px solid rgba(181,86,58,0.4); border-radius:3px; padding:1rem 1.25rem; margin-bottom:2rem; font-size:0.85rem; color:#F0E4D8;">
+      <strong style="color:#fff;">In case of emergency:</strong> This practice does not provide 24/7 crisis coverage. Call 911 or go to your nearest emergency room. You can also call or text <strong style="color:#fff;">988</strong> (Suicide &amp; Crisis Lifeline), available 24/7.
+    </div>
+    <div class="footer-grid">
+      <div>
+        <h4 style="font-family:var(--font-display); font-size:1.1rem; text-transform:none; letter-spacing:0;">GA Integrated Therapeutic Perspectives LLC</h4>
+        <p style="color:#B7AD9A;">202 W General Stewart Way<br>Hinesville, GA 31313</p>
+        <p style="color:#B7AD9A;">678-664-4003<br>info@gaintegratedperspectives.com</p>
+      </div>
+      <div>
+        <h4>Site</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="blog.html">Resources</a></li>
+          <li><a href="bookstore.html">Bookstore</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in Touch</h4>
+        <ul>
+          <li><a href="contact.html">Book a Consult</a></li>
+          <li><a href="mailto:info@gaintegratedperspectives.com">Email Ke</a></li>
+          <li><a href="https://counselorready.com" target="_blank" rel="noopener">CE Courses (CounselorReady)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="year"></span> GA Integrated Therapeutic Perspectives LLC</span>
+      <span>Licensed in Georgia, Florida, Idaho &amp; Texas</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var toggle = document.querySelector('.nav-toggle');
+  var links = document.querySelector('.nav-links');
+  if (toggle && links) {
+    toggle.addEventListener('click', function () {
+      links.classList.toggle('open');
+      var expanded = links.classList.contains('open');
+      toggle.setAttribute('aria-expanded', expanded);
+    });
+  }
+});
+
+</script>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
