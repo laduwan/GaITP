@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Alerts Toggle</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Karla', sans-serif; background:#F7F3EC; color:#3A2A30; margin:0; padding:2rem 1.25rem; }
+  .wrap { max-width:420px; margin:2rem auto; background:#fff; border:1px solid #E6DDD9; border-radius:8px; padding:1.75rem; }
+  h1 { font-family:Georgia, serif; font-size:1.5rem; margin:0 0 0.25rem; }
+  p.sub { color:#7A6E73; font-size:0.9rem; margin:0 0 1.5rem; }
+  label { display:block; font-weight:600; font-size:0.85rem; margin-bottom:0.3rem; }
+  input { width:100%; padding:0.75rem; font-size:1rem; border:1.5px solid #E6DDD9; border-radius:4px; margin-bottom:1.25rem; box-sizing:border-box; }
+  .status { text-align:center; padding:1rem; border-radius:6px; margin-bottom:1.25rem; font-weight:700; font-size:1.1rem; }
+  .status.on { background:#EAF2EC; color:#145C34; }
+  .status.off { background:#F4ECEF; color:#7E5966; }
+  .status.unknown { background:#F0EAE7; color:#7A6E73; }
+  .btns { display:flex; gap:0.75rem; }
+  button { flex:1; padding:0.9rem; font-size:1rem; font-weight:700; border:none; border-radius:999px; cursor:pointer; }
+  .on-btn { background:#1E7E48; color:#fff; }
+  .off-btn { background:#7E5966; color:#fff; }
+  .refresh { width:100%; margin-top:0.75rem; background:transparent; color:#4E7191; border:1px solid #E6DDD9; }
+  .note { font-size:0.8rem; color:#7A6E73; margin-top:1.25rem; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Text alerts</h1>
+  <p class="sub">Turn the SMS pings to your phone on or off. Email always sends regardless.</p>
+
+  <div id="status" class="status unknown">Checking&hellip;</div>
+
+  <label for="endpoint">Relay URL</label>
+  <input type="text" id="endpoint" placeholder="https://gaitp-relay.onrender.com" autocomplete="off">
+
+  <label for="key">Passcode</label>
+  <input type="password" id="key" placeholder="Your toggle secret" autocomplete="off">
+
+  <div class="btns">
+    <button class="on-btn" onclick="setState('on')">Texts ON</button>
+    <button class="off-btn" onclick="setState('off')">Texts OFF</button>
+  </div>
+  <button class="refresh" onclick="refresh()">Refresh status</button>
+
+  <hr style="border:none; border-top:1px solid #E6DDD9; margin:1.75rem 0;">
+
+  <h1 style="font-size:1.25rem;">Do Not Disturb</h1>
+  <p class="sub">A daily quiet window when texts pause automatically. Email still sends.</p>
+
+  <div id="dnd-status" class="status unknown">&mdash;</div>
+
+  <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
+    <div style="flex:1;">
+      <label for="dstart">Quiet from</label>
+      <input type="time" id="dstart" value="21:00" style="margin-bottom:0;">
+    </div>
+    <div style="flex:1;">
+      <label for="dend">until</label>
+      <input type="time" id="dend" value="08:00" style="margin-bottom:0;">
+    </div>
+  </div>
+  <button class="refresh" style="margin-bottom:1rem;" onclick="saveWindow()">Save quiet hours</button>
+  <div class="btns">
+    <button class="on-btn" onclick="setDnd('on')">DND ON</button>
+    <button class="off-btn" onclick="setDnd('off')">DND OFF</button>
+  </div>
+
+  <p class="note">This page just talks to your relay &mdash; nothing is stored here. On a relay restart/redeploy, settings revert to your env defaults (<strong>SMS_ENABLED</strong>, <strong>DND_ENABLED</strong>, <strong>DND_START</strong>, <strong>DND_END</strong>), so set those to your safe baseline.</p>
+</div>
+
+<script>
+function base(){ return (document.getElementById('endpoint').value || '').replace(/\/+$/,''); }
+function render(state){
+  var el = document.getElementById('status');
+  if (state === true){ el.className='status on'; el.textContent='Texts are ON'; }
+  else if (state === false){ el.className='status off'; el.textContent='Texts are OFF'; }
+  else { el.className='status unknown'; el.textContent='Status unknown'; }
+}
+function renderDnd(d){
+  var el = document.getElementById('dnd-status');
+  if (!d){ el.className='status unknown'; el.textContent='—'; return; }
+  if (d.activeNow){ el.className='status off'; el.textContent='Quiet now (until '+d.end+')'; }
+  else if (d.enabled){ el.className='status on'; el.textContent='DND on · '+d.start+'–'+d.end; }
+  else { el.className='status unknown'; el.textContent='DND off'; }
+  if (d.start) document.getElementById('dstart').value = d.start;
+  if (d.end) document.getElementById('dend').value = d.end;
+}
+function refresh(){
+  if(!base()) return;
+  fetch(base()+'/sms-status').then(r=>r.json()).then(d=>{ render(d.smsEnabled); renderDnd(d.dnd); }).catch(()=>{render(null); renderDnd(null);});
+}
+function setState(state){
+  if(!base()){ alert('Enter your relay URL first.'); return; }
+  var key = document.getElementById('key').value;
+  fetch(base()+'/sms-toggle?key='+encodeURIComponent(key)+'&state='+state, {method:'POST'})
+    .then(r=>r.json())
+    .then(d=>{ if(d.ok) render(d.smsEnabled); else alert('Wrong passcode or error.'); })
+    .catch(()=>alert('Could not reach relay.'));
+}
+function setDnd(state){
+  if(!base()){ alert('Enter your relay URL first.'); return; }
+  var key = document.getElementById('key').value;
+  fetch(base()+'/dnd-toggle?key='+encodeURIComponent(key)+'&state='+state, {method:'POST'})
+    .then(r=>r.json())
+    .then(d=>{ if(d.ok) renderDnd(d.dnd); else alert('Wrong passcode or error.'); })
+    .catch(()=>alert('Could not reach relay.'));
+}
+function saveWindow(){
+  if(!base()){ alert('Enter your relay URL first.'); return; }
+  var key = document.getElementById('key').value;
+  var s = document.getElementById('dstart').value, e = document.getElementById('dend').value;
+  fetch(base()+'/dnd-window?key='+encodeURIComponent(key)+'&start='+encodeURIComponent(s)+'&end='+encodeURIComponent(e), {method:'POST'})
+    .then(r=>r.json())
+    .then(d=>{ if(d.ok){ renderDnd(d.dnd); alert('Quiet hours saved.'); } else alert('Wrong passcode or error.'); })
+    .catch(()=>alert('Could not reach relay.'));
+}
+document.getElementById('endpoint').addEventListener('change', refresh);
+</script>
+</body>
+</html>

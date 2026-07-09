@@ -1,0 +1,204 @@
+/**
+ * GAITP Relay Endpoint
+ * --------------------------------------------------------------
+ * Receives an anonymous message from reach.html and relays the
+ * FULL text to the practice by email (Resend) and text (Twilio).
+ *
+ * Design guarantees (keep these intact):
+ *  - It DECIDES NOTHING clinical. It relays every message to Ke.
+ *  - The crisis-word flag only marks the PRACTICE's copy so Ke can
+ *    triage the loud ones first. It never changes what the sender sees.
+ *  - The sender's confirmation is handled entirely on the front end
+ *    and is identical for everyone (flagged or not).
+ *  - No database. Nothing is stored here. It receives -> relays -> forgets.
+ *    (Your email/SMS providers will retain the message in their logs;
+ *     choose providers/settings accordingly.)
+ *
+ * Deploy: as a small Web Service on Render (Node).
+ * Env vars required:
+ *   RESEND_API_KEY        - from resend.com
+ *   FROM_EMAIL            - a verified sender, e.g. relay@gaintegratedperspectives.com
+ *   TO_EMAIL              - where messages should land (your practice inbox)
+ *   TWILIO_ACCOUNT_SID    - from twilio.com
+ *   TWILIO_AUTH_TOKEN     - from twilio.com
+ *   TWILIO_FROM           - your Twilio number, e.g. +1XXXXXXXXXX
+ *   TO_SMS                - your cell, e.g. +16786644003
+ *   ALLOWED_ORIGIN        - your site origin, e.g. https://gaintegratedperspectives.com
+ *
+ * Install: npm i express cors resend twilio
+ */
+
+const express = require('express');
+const cors = require('cors');
+const { Resend } = require('resend');
+const twilio = require('twilio');
+
+const app = express();
+app.use(express.json({ limit: '32kb' }));
+app.use(cors({ origin: process.env.ALLOWED_ORIGIN || true }));
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const sms = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+// ---- SMS on/off toggle -------------------------------------------------
+// Email ALWAYS sends (reliable record). SMS is the interruptible alert.
+// Default comes from env SMS_ENABLED ("true"/"false"); you can flip it at
+// runtime from the toggle page without a redeploy. NOTE: on a restart/redeploy
+// the value resets to the SMS_ENABLED default, so set that to your safe baseline.
+let smsEnabled = String(process.env.SMS_ENABLED || 'true').toLowerCase() === 'true';
+const TOGGLE_SECRET = process.env.TOGGLE_SECRET || '';
+
+// ---- Daily Do Not Disturb (quiet hours) --------------------------------
+// A recurring window each day during which texts are suppressed automatically.
+// Email still sends. Set once via env; adjustable at runtime from the toggle page.
+//   DND_ENABLED  "true"/"false"   (default false)
+//   DND_START    "HH:MM" 24h      (e.g. "21:00")
+//   DND_END      "HH:MM" 24h      (e.g. "08:00")  — overnight windows are fine
+//   DND_TZ       IANA tz          (default "America/New_York")
+let dndEnabled = String(process.env.DND_ENABLED || 'false').toLowerCase() === 'true';
+let dndStart = process.env.DND_START || '21:00';
+let dndEnd = process.env.DND_END || '08:00';
+let dndTz = process.env.DND_TZ || 'America/New_York';
+
+function nowMinutesInTz(tz) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit'
+  }).formatToParts(new Date());
+  let h = 0, m = 0;
+  for (const p of parts) {
+    if (p.type === 'hour') h = parseInt(p.value, 10) % 24;
+    if (p.type === 'minute') m = parseInt(p.value, 10);
+  }
+  return h * 60 + m;
+}
+function toMinutes(hhmm) {
+  const [h, m] = String(hhmm || '').split(':').map(x => parseInt(x, 10));
+  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+}
+function inQuietHours() {
+  if (!dndEnabled) return false;
+  const cur = nowMinutesInTz(dndTz);
+  const s = toMinutes(dndStart), e = toMinutes(dndEnd);
+  if (s === e) return false;                 // zero-length window
+  return (s < e) ? (cur >= s && cur < e)     // same-day window
+                 : (cur >= s || cur < e);    // overnight window
+}
+// ------------------------------------------------------------------------
+
+function checkSecret(req) {
+  const provided = (req.query.key || req.body.key || '').toString();
+  return TOGGLE_SECRET && provided === TOGGLE_SECRET;
+}
+
+// Read current state (no secret needed — reveals nothing sensitive).
+app.get('/sms-status', (_req, res) => res.json({
+  smsEnabled,
+  dnd: { enabled: dndEnabled, start: dndStart, end: dndEnd, tz: dndTz, activeNow: inQuietHours() }
+}));
+
+// Flip texts: /sms-toggle?key=SECRET&state=on|off  (GET or POST)
+app.all('/sms-toggle', (req, res) => {
+  if (!checkSecret(req)) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const state = (req.query.state || req.body.state || '').toString().toLowerCase();
+  if (state === 'on') smsEnabled = true;
+  else if (state === 'off') smsEnabled = false;
+  else return res.status(400).json({ ok: false, error: 'state must be on or off' });
+  return res.json({ ok: true, smsEnabled });
+});
+
+// Turn DND on/off: /dnd-toggle?key=SECRET&state=on|off
+app.all('/dnd-toggle', (req, res) => {
+  if (!checkSecret(req)) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const state = (req.query.state || req.body.state || '').toString().toLowerCase();
+  if (state === 'on') dndEnabled = true;
+  else if (state === 'off') dndEnabled = false;
+  else return res.status(400).json({ ok: false, error: 'state must be on or off' });
+  return res.json({ ok: true, dnd: { enabled: dndEnabled, start: dndStart, end: dndEnd, tz: dndTz, activeNow: inQuietHours() } });
+});
+
+// Set the quiet-hours window: /dnd-window?key=SECRET&start=21:00&end=08:00
+app.all('/dnd-window', (req, res) => {
+  if (!checkSecret(req)) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const start = (req.query.start || req.body.start || '').toString();
+  const end = (req.query.end || req.body.end || '').toString();
+  const valid = s => /^\d{1,2}:\d{2}$/.test(s);
+  if (!valid(start) || !valid(end)) return res.status(400).json({ ok: false, error: 'use HH:MM' });
+  dndStart = start; dndEnd = end;
+  return res.json({ ok: true, dnd: { enabled: dndEnabled, start: dndStart, end: dndEnd, tz: dndTz, activeNow: inQuietHours() } });
+});
+// ------------------------------------------------------------------------
+
+// Authoritative crisis-word list (server-side is the source of truth).
+const CRISIS_WORDS = [
+  'suicide','suicidal','kill myself','end my life','end it all',
+  'hurt myself','harm myself','self harm','self-harm','cut myself',
+  'no reason to live',"don't want to be here",'dont want to be here',
+  'want to die','better off dead','kill him','kill her','kill them','hurt someone'
+];
+
+function computeFlag(text) {
+  const t = (text || '').toLowerCase();
+  return CRISIS_WORDS.some(w => t.includes(w));
+}
+
+app.post('/relay', async (req, res) => {
+  try {
+    const message = (req.body.message || '').toString().slice(0, 5000).trim();
+    const contact = (req.body.contact || '').toString().slice(0, 300).trim();
+    if (!message) return res.status(400).json({ ok: false, error: 'empty' });
+
+    // Server recomputes the flag — do not trust the client value.
+    const flagged = computeFlag(message + ' ' + contact);
+    const banner = flagged ? '⚠ FLAGGED: crisis language present — review first\n\n' : '';
+    const subject = (flagged ? '⚠ FLAGGED — ' : '') + 'New website message';
+
+    const bodyText =
+      banner +
+      'A message was submitted through the website.\n\n' +
+      '----- MESSAGE -----\n' + message + '\n\n' +
+      '----- HOW TO FOLLOW UP -----\n' + (contact || '(none provided)') + '\n\n' +
+      'Submitted: ' + new Date().toLocaleString() + '\n' +
+      '(Anonymous. This relay stores nothing. You make all clinical decisions.)';
+
+    // Fire email + SMS in parallel; don't fail the user if one provider hiccups.
+    const tasks = [];
+
+    tasks.push(
+      resend.emails.send({
+        from: process.env.FROM_EMAIL,
+        to: process.env.TO_EMAIL,
+        subject,
+        text: bodyText
+      }).catch(e => console.error('email error', e))
+    );
+
+    // SMS has tight length limits — send a short alert + start of message.
+    // Sends only when texts are ON *and* not inside the daily Do Not Disturb
+    // window. Email already sent above regardless.
+    if (smsEnabled && !inQuietHours()) {
+      const smsText =
+        (flagged ? '⚠ FLAGGED website msg. ' : 'New website msg. ') +
+        'Preview: ' + message.slice(0, 240) +
+        (contact ? ' | Follow up: ' + contact.slice(0, 60) : '');
+      tasks.push(
+        sms.messages.create({
+          body: smsText.slice(0, 320),
+          from: process.env.TWILIO_FROM,
+          to: process.env.TO_SMS
+        }).catch(e => console.error('sms error', e))
+      );
+    }
+
+    await Promise.all(tasks);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    // Still return ok:true so the sender always sees the same confirmation.
+    return res.json({ ok: true });
+  }
+});
+
+app.get('/', (_req, res) => res.send('GAITP relay is running.'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('Relay listening on ' + PORT));
