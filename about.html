@@ -456,5 +456,116 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </script>
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<!--
+  GAITP persistent suggestion box — self-contained: no external files, matches
+  the site's embedded-everything approach. Posts to the relay server's
+  /suggestion endpoint.
+-->
+<style>
+  #gaitp-suggest-tab{position:fixed;bottom:28px;right:0;z-index:8900;display:flex;align-items:center;gap:6px;
+    background:#1E7E48;color:#fff;border:none;padding:10px 14px 10px 12px;border-radius:8px 0 0 8px;
+    font-family:'Karla',system-ui,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;
+    box-shadow:-2px 2px 10px rgba(0,0,0,.18);}
+  #gaitp-suggest-tab:hover{background:#175f37}
+  #gaitp-suggest-panel{position:fixed;bottom:76px;right:20px;z-index:8900;width:min(320px,calc(100vw - 40px));
+    background:#fff;border-radius:12px;box-shadow:0 10px 36px rgba(0,0,0,.2);padding:16px;
+    font-family:'Karla',system-ui,sans-serif;}
+  #gaitp-suggest-panel.hidden{display:none}
+  .gaitp-suggest-head{display:flex;align-items:flex-start;justify-content:space-between;font-size:13.5px;
+    font-weight:700;color:#51393F;margin-bottom:10px}
+  #gaitp-suggest-close{background:none;border:none;color:#999;font-size:13px;cursor:pointer;line-height:1}
+  #gaitp-suggest-panel select,#gaitp-suggest-panel textarea,#gaitp-suggest-panel input{width:100%;
+    box-sizing:border-box;font-family:inherit;font-size:13px;border:1px solid #E3DED3;border-radius:7px;
+    padding:8px 10px;margin-bottom:8px;color:#333;}
+  #gaitp-suggest-panel textarea{min-height:84px;resize:vertical}
+  #gaitp-suggest-submit{width:100%;background:#1E7E48;color:#fff;border:none;border-radius:7px;padding:9px 0;
+    font-size:13px;font-weight:700;cursor:pointer}
+  #gaitp-suggest-submit:disabled{opacity:.6;cursor:default}
+  #gaitp-suggest-submit:hover:not(:disabled){background:#175f37}
+  #gaitp-suggest-status{font-size:12px;margin-top:8px;text-align:center;min-height:16px}
+  #gaitp-suggest-status.ok{color:#1E7E48}
+  #gaitp-suggest-status.err{color:#b02a37}
+  @media (max-width:480px){.gaitp-suggest-tab-label{display:none}#gaitp-suggest-tab{padding:12px;border-radius:50% 0 0 50%}}
+</style>
+
+<button id="gaitp-suggest-tab" aria-label="Send a suggestion">
+  <span>💬</span><span class="gaitp-suggest-tab-label">Suggestion</span>
+</button>
+<div id="gaitp-suggest-panel" class="hidden" role="dialog" aria-label="Send a suggestion">
+  <div class="gaitp-suggest-head">
+    <span>Feedback on the site?</span>
+    <button id="gaitp-suggest-close" aria-label="Close">✕</button>
+  </div>
+  <select id="gaitp-suggest-category">
+    <option value="feature-request">Suggestion</option>
+    <option value="bug">Something's broken</option>
+    <option value="content">Content feedback</option>
+    <option value="other">Other</option>
+  </select>
+  <textarea id="gaitp-suggest-message" maxlength="4000" placeholder="Tell us what's on your mind..."></textarea>
+  <input id="gaitp-suggest-email" type="email" placeholder="Your email (optional)" />
+  <button id="gaitp-suggest-submit">Send</button>
+  <div id="gaitp-suggest-status"></div>
+</div>
+
+<script>
+(function () {
+  // Set this to your deployed relay endpoint, e.g. "https://gaitp-relay.onrender.com"
+  var RELAY_BASE = "REPLACE_WITH_YOUR_RELAY_ENDPOINT";
+
+  var panel = document.getElementById('gaitp-suggest-panel');
+  var tab = document.getElementById('gaitp-suggest-tab');
+  var submitBtn = document.getElementById('gaitp-suggest-submit');
+  var statusEl = document.getElementById('gaitp-suggest-status');
+
+  tab.addEventListener('click', function () { panel.classList.toggle('hidden'); });
+  document.getElementById('gaitp-suggest-close').addEventListener('click', function () { panel.classList.add('hidden'); });
+
+  submitBtn.addEventListener('click', function () {
+    var message = document.getElementById('gaitp-suggest-message').value.trim();
+    var category = document.getElementById('gaitp-suggest-category').value;
+    var email = document.getElementById('gaitp-suggest-email').value.trim();
+
+    if (!message) {
+      statusEl.textContent = 'Please enter a message.';
+      statusEl.className = 'err';
+      return;
+    }
+    if (!RELAY_BASE || RELAY_BASE.indexOf('REPLACE_') !== -1) {
+      statusEl.textContent = 'Suggestion box not yet connected — see RELAY-SETUP.md.';
+      statusEl.className = 'err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = '';
+    statusEl.className = '';
+
+    fetch(RELAY_BASE + '/suggestion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: message,
+        category: category,
+        email: email || undefined,
+        pageUrl: window.location.href,
+      }),
+    })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function () {
+        statusEl.textContent = 'Thanks — got it!';
+        statusEl.className = 'ok';
+        document.getElementById('gaitp-suggest-message').value = '';
+        setTimeout(function () { panel.classList.add('hidden'); }, 1600);
+      })
+      .catch(function () {
+        statusEl.textContent = 'Something went wrong. Please try again.';
+        statusEl.className = 'err';
+      })
+      .finally(function () { submitBtn.disabled = false; });
+  });
+})();
+</script>
+
 </body>
 </html>
