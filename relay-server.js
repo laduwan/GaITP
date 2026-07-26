@@ -198,6 +198,61 @@ app.post('/relay', async (req, res) => {
   }
 });
 
+// ---- Suggestion box -----------------------------------------------------
+// Separate, low-stakes feedback channel ("I found a bug" / "you should add
+// X") from any page on the site. Reuses the same Resend setup as /relay.
+// Does NOT touch /relay's crisis-flagging logic or the anonymous message form.
+
+// In-memory rate limiter — 10 submissions / IP / day (resets on deploy,
+// which is fine for this volume; swap to Redis if it ever needs to scale)
+const suggestionRateLimit = new Map();
+function checkSuggestionRateLimit(ip) {
+  const key = `${ip}:${new Date().toISOString().split('T')[0]}`;
+  if (suggestionRateLimit.size > 10000) suggestionRateLimit.clear();
+  const count = suggestionRateLimit.get(key) || 0;
+  if (count >= 10) return false;
+  suggestionRateLimit.set(key, count + 1);
+  return true;
+}
+
+app.post('/suggestion', async (req, res) => {
+  try {
+    if (!checkSuggestionRateLimit(req.ip)) {
+      return res.status(429).json({ error: 'Too many submissions today. Please try again tomorrow.' });
+    }
+
+    const { message, category, email, pageUrl } = req.body || {};
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: 'A message is required.' });
+    }
+    const cleanMessage = String(message).trim().slice(0, 4000);
+    const cleanCategory = ['bug', 'feature-request', 'content', 'billing', 'other'].includes(category)
+      ? category
+      : 'other';
+
+    const text =
+      `New suggestion submitted — GA Integrated Therapeutic Perspectives\n\n` +
+      `Category: ${cleanCategory}\n` +
+      (email ? `Email: ${String(email).trim().slice(0, 200)}\n` : '') +
+      `Page: ${pageUrl || req.headers.referer || 'n/a'}\n\n` +
+      `Message:\n${cleanMessage}\n`;
+
+    await resend.emails.send({
+      from: process.env.FROM_EMAIL,
+      to: process.env.TO_EMAIL,
+      subject: `[Suggestion] Website — ${cleanCategory}`,
+      text,
+    });
+
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error('[relay] suggestion send failed:', err.message);
+    // Still tell the visitor it went through — never block on best-effort email delivery
+    res.status(201).json({ success: true });
+  }
+});
+// ------------------------------------------------------------------------
+
 app.get('/', (_req, res) => res.send('GAITP relay is running.'));
 
 const PORT = process.env.PORT || 3000;
