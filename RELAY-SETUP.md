@@ -1,7 +1,8 @@
-# "Send a Message" relay — setup
+# Relay — setup
 
-The website pages are static and deploy as-is. The **Send a Message** form (`reach.html`)
-needs one small backend so it can email + text you. Here's the whole setup.
+The website pages are static and deploy as-is. Three things need one small backend so they can
+actually work: the **Send a Message** form (`reach.html`), the site-wide suggestion box, and the
+**worksheets delivery** form (`worksheets.html`). Here's the whole setup.
 
 ## What it does
 - A visitor submits an anonymous message on `reach.html`.
@@ -9,28 +10,20 @@ needs one small backend so it can email + text you. Here's the whole setup.
 - If the message contains crisis words, YOUR copy is marked "⚠ FLAGGED" so you read it first.
 - The visitor always sees the same confirmation, flagged or not. The tool decides nothing —
   you make every clinical and scheduling call.
+- A visitor requesting free worksheets on `worksheets.html` gets an email with their download
+  links; you get a one-line notice so you can see signups happening.
 - Nothing is stored by the relay. (Your email/SMS providers keep their own logs.)
 
 ## Deploy the relay (Render — Web Service, Node)
-1. Put `relay-server.js` in a small repo (or a `/relay` folder) with a `package.json`:
-   ```json
-   {
-     "name": "gaitp-relay",
-     "version": "1.0.0",
-     "main": "relay-server.js",
-     "scripts": { "start": "node relay-server.js" },
-     "dependencies": {
-       "express": "^4.19.2",
-       "cors": "^2.8.5",
-       "resend": "^3.2.0",
-       "twilio": "^5.0.0"
-     }
-   }
-   ```
-2. Create a new **Web Service** on Render pointing at that repo.
-   - Build command: `npm install`
-   - Start command: `npm start`
-3. Add these environment variables in Render:
+The relay code lives in `/relay` in this same repo, with its own `package.json` so it can be
+deployed as a **separate Render service** from the static site — the static site never runs
+`npm install`, only the relay does.
+
+1. Create a new **Web Service** on Render, pointing at this repo (`laduwan/GaITP`).
+   - **Root Directory:** `relay`
+   - **Build command:** `npm install`
+   - **Start command:** `npm start`
+2. Add these environment variables in Render:
    - `RESEND_API_KEY` — from resend.com
    - `FROM_EMAIL` — a verified sender (e.g. relay@gaintegratedperspectives.com)
    - `TO_EMAIL` — where you want messages (your practice inbox)
@@ -38,25 +31,38 @@ needs one small backend so it can email + text you. Here's the whole setup.
    - `TWILIO_FROM` — your Twilio number (e.g. +1XXXXXXXXXX)
    - `TO_SMS` — your cell (e.g. +16786644003)
    - `ALLOWED_ORIGIN` — https://gaintegratedperspectives.com
+   - `SITE_ORIGIN` — https://gaintegratedperspectives.com (used to build worksheet download links)
    - `SMS_ENABLED` — `true` or `false` — the DEFAULT for text alerts (see toggle below)
    - `TOGGLE_SECRET` — a passcode you choose, used to flip texts on/off
    - `DND_ENABLED` — `true`/`false` — daily Do Not Disturb default (default `false`)
    - `DND_START` — quiet-hours start, `HH:MM` 24h (e.g. `21:00`)
    - `DND_END` — quiet-hours end, `HH:MM` 24h (e.g. `08:00`) — overnight is fine
    - `DND_TZ` — your timezone (default `America/New_York`)
-4. Render gives you a URL like `https://gaitp-relay.onrender.com`.
-   Your endpoint is that URL + `/relay`.
+3. Render gives you a URL like `https://gaitp-relay.onrender.com`.
 
-## Point the form at the relay
-In `reach.html`, find:
+## Point the site pages at the relay
+Three files reference `RELAY_BASE` and currently have it set to the placeholder
+`"REPLACE_WITH_YOUR_RELAY_ENDPOINT"`: **every page** (for the suggestion box), plus
+`reach.html` and `worksheets.html` specifically. In each file, find:
 ```js
-var RELAY_ENDPOINT = "REPLACE_WITH_YOUR_RELAY_ENDPOINT";
+var RELAY_BASE = "REPLACE_WITH_YOUR_RELAY_ENDPOINT";
 ```
-Change it to your endpoint, e.g.:
+Change it to your actual relay URL, e.g.:
 ```js
-var RELAY_ENDPOINT = "https://gaitp-relay.onrender.com/relay";
+var RELAY_BASE = "https://gaitp-relay.onrender.com";
 ```
-Re-upload `reach.html`. Done.
+Re-upload the changed files. Done — the suggestion box, message form, and worksheets form all
+use the same `RELAY_BASE` value, just different endpoints (`/suggestion`, `/relay`,
+`/worksheets-signup`).
+
+## Worksheet delivery for new titles
+`relay-server.js` has a `WORKSHEET_BOOKS` object mapping a book key (like
+`married-to-the-mission`) to its title and PDF file paths. To add a new title:
+1. Drop its PDFs in `/downloads/<book-key>/` in this repo.
+2. Add an entry to `WORKSHEET_BOOKS` in `relay/relay-server.js` with the matching paths.
+3. Point a new page's form at `/worksheets-signup` with `book: '<book-key>'` in the request body
+   (copy `worksheets.html` as a starting point).
+No database, no admin panel — just a lookup table in the relay code.
 
 ## Text alerts on/off toggle
 Email always sends. Texts (SMS) are the interruptible alert you can silence anytime
