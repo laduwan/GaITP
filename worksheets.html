@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Resources | GA Integrated Therapeutic Perspectives</title>
-<meta name="description" content="Articles and resources on anxiety, grief, relationships, and mental wellness from GA Integrated Therapeutic Perspectives.">
+<title>Free Worksheets &mdash; Married to the Mission | GA Integrated Therapeutic Perspectives</title>
+<meta name="description" content="Get the free printable worksheets from Married to the Mission: A Relationship Guide for the New Military Spouse.">
 <style>
 /* =========================================================
    GA Integrated Therapeutic Perspectives — Editorial System
@@ -316,6 +316,19 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
 .footer-bottom { border-top: 1px solid rgba(201,194,182,0.2); padding-top: var(--s2); font-size: 0.82rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--s1); color: #8F887A; }
 
 </style>
+
+<style>
+.ws-form { max-width: 560px; }
+#ws-status { font-family: var(--font-ui); font-size: 0.95rem; margin-top: var(--s2); min-height: 1.2em; }
+#ws-status.ok { color: var(--green-deep); }
+#ws-status.err { color: #b02a37; }
+#ws-submit:disabled { opacity: 0.6; cursor: default; }
+.ws-confirm { display: none; background: var(--green-tint); border-left: 3px solid var(--green); padding: var(--s3); border-radius: var(--radius); margin-top: var(--s3); }
+.ws-confirm.show { display: block; }
+.ws-list { list-style: none; margin: 0 0 var(--s4); padding: 0; }
+.ws-list li { padding: 0.6rem 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+</style>
+
 </head>
 <body>
 <header class="site-header">
@@ -329,27 +342,40 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
       <li><a href="index.html">Home</a></li>
       <li><a href="about.html">About</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a href="blog.html" class="active">Resources</a></li>
+      <li><a href="blog.html">Resources</a></li>
       <li><a href="bookstore.html">Bookstore</a></li>
       <li><a href="faq.html">FAQ</a></li>
-      <li><a href="contact.html">Contact</a></li>
+      <li><a href="contact.html" class="active">Contact</a></li>
     </ul>
   </nav>
 </header>
 
-
 <section class="page-header">
-  <div class="container"><span class="eyebrow">Notes on getting through it</span><h1>Resources.</h1><p class="lede">Short, practical writing on anxiety, grief, relationships, and everything in between.</p></div>
+  <div class="container"><span class="eyebrow">Free with your copy</span><h1>Married to the Mission &mdash; Worksheets.</h1><p class="lede">Every worksheet from the book, formatted for printing at home. Enter your email and we'll send the download links right away.</p></div>
 </section>
 
 <section style="padding-top:0;">
   <div class="container">
-    <div class="grid grid-3">
-      <div class="service"><span class="svc-tag">Coming soon</span><h3>Grounding Techniques for Anxiety</h3><p>A practical, no-fluff walkthrough of grounding techniques you can use anywhere.</p></div>
-      <div class="service"><span class="svc-tag">Coming soon</span><h3>What Grief Actually Looks Like</h3><p>Why grief doesn&rsquo;t follow the stages the way you were taught &mdash; and what to do instead.</p></div>
-      <div class="service"><span class="svc-tag">Coming soon</span><h3>Starting Therapy: What to Expect</h3><p>A first-session walkthrough for anyone nervous about starting therapy.</p></div>
+    <div class="grid grid-2 align-center">
+      <div>
+        <span class="eyebrow">What you'll get</span>
+        <h2>Two free downloads.</h2>
+        <ul class="ws-list">
+          <li><strong>The Printable Worksheets</strong> &mdash; all 9 worksheets from the book, ready to print and fill in.</li>
+          <li><strong>The Eight Conversations Checklist</strong> &mdash; a standalone printable for the conversation every couple should have before marrying into the military.</li>
+        </ul>
+        <div class="note">No account needed. Download links are sent straight to your inbox &mdash; nothing is stored beyond what's needed to send them.</div>
+      </div>
+      <div class="ws-form">
+        <label for="ws-email">Your email</label>
+        <input id="ws-email" type="email" maxlength="200" placeholder="you@example.com">
+        <button id="ws-submit" class="btn btn-solid" type="button">Send Me the Worksheets</button>
+        <div id="ws-status"></div>
+        <div id="ws-confirm" class="ws-confirm">
+          <strong>Check your inbox.</strong> Your worksheet download links are on their way.
+        </div>
+      </div>
     </div>
-    <div class="note" style="margin-top:2.5rem;"><strong>No posts published yet.</strong> Send topics or drafts and each post gets its own page in this same design.</div>
   </div>
 </section>
 
@@ -507,6 +533,61 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .catch(function () {
         statusEl.textContent = 'Something went wrong. Please try again.';
+        statusEl.className = 'err';
+      })
+      .finally(function () { submitBtn.disabled = false; });
+  });
+})();
+</script>
+
+
+
+
+<script>
+(function () {
+  // Set this to your deployed relay endpoint, e.g. "https://gaitp-relay.onrender.com"
+  var RELAY_BASE = "https://gaitp-relay.onrender.com"; // CONFIRM: update if your Render service URL differs
+
+  var emailEl = document.getElementById('ws-email');
+  var submitBtn = document.getElementById('ws-submit');
+  var statusEl = document.getElementById('ws-status');
+  var confirmEl = document.getElementById('ws-confirm');
+
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  submitBtn.addEventListener('click', function () {
+    var email = emailEl.value.trim();
+
+    if (!isValidEmail(email)) {
+      statusEl.textContent = 'Please enter a valid email address.';
+      statusEl.className = 'err';
+      return;
+    }
+    if (!RELAY_BASE || RELAY_BASE.indexOf('REPLACE_') !== -1) {
+      statusEl.textContent = 'This form is not yet connected — see RELAY-SETUP.md.';
+      statusEl.className = 'err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = '';
+    statusEl.className = '';
+
+    fetch(RELAY_BASE + '/worksheets-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, book: 'married-to-the-mission' }),
+    })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function () {
+        emailEl.value = '';
+        confirmEl.classList.add('show');
+        statusEl.textContent = '';
+      })
+      .catch(function () {
+        statusEl.textContent = 'Something went wrong. Please try again, or email info@gaintegratedperspectives.com.';
         statusEl.className = 'err';
       })
       .finally(function () { submitBtn.disabled = false; });

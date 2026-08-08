@@ -1,0 +1,19 @@
+{
+  "name": "gaitp-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stateless relay for GA Integrated Therapeutic Perspectives — anonymous messages, suggestion box, and worksheet delivery. Receives, relays, forgets. No database.",
+  "main": "relay-server.js",
+  "scripts": {
+    "start": "node relay-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "resend": "^3.2.0",
+    "twilio": "^5.0.0"
+  }
+}

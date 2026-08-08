@@ -253,7 +253,87 @@ app.post('/suggestion', async (req, res) => {
 });
 // ------------------------------------------------------------------------
 
-app.get('/', (_req, res) => res.send('GAITP relay is running.'));
+// ---- Worksheet delivery --------------------------------------------------
+// Stateless like everything else here: receives an email, sends download
+// links back to that address via Resend, forgets it. No list is built,
+// no database is touched. Add new entries to WORKSHEET_BOOKS to support
+// additional titles without changing the route logic.
+
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://gaintegratedperspectives.com';
+
+const WORKSHEET_BOOKS = {
+  'married-to-the-mission': {
+    title: 'Married to the Mission',
+    files: [
+      { label: 'The Printable Worksheets (all 9, ready to print)', path: '/downloads/married-to-the-mission/MarriedToTheMission_PrintableWorksheets.pdf' },
+      { label: 'The Eight Conversations Checklist', path: '/downloads/married-to-the-mission/MarriedToTheMission_EightConversationsChecklist.pdf' },
+    ],
+  },
+};
+
+// Same lightweight in-memory rate limiter pattern as /suggestion.
+const worksheetsRateLimit = new Map();
+function checkWorksheetsRateLimit(ip) {
+  const key = `${ip}:${new Date().toISOString().split('T')[0]}`;
+  if (worksheetsRateLimit.size > 10000) worksheetsRateLimit.clear();
+  const count = worksheetsRateLimit.get(key) || 0;
+  if (count >= 10) return false;
+  worksheetsRateLimit.set(key, count + 1);
+  return true;
+}
+
+app.post('/worksheets-signup', async (req, res) => {
+  try {
+    if (!checkWorksheetsRateLimit(req.ip)) {
+      return res.status(429).json({ ok: false, error: 'Too many requests today. Please try again tomorrow.' });
+    }
+
+    const email = (req.body.email || '').toString().trim().slice(0, 200);
+    const bookKey = (req.body.book || '').toString().trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ ok: false, error: 'A valid email is required.' });
+    }
+
+    const book = WORKSHEET_BOOKS[bookKey];
+    if (!book) {
+      return res.status(400).json({ ok: false, error: 'Unknown book.' });
+    }
+
+    const linksHtml = book.files
+      .map(f => `<li><a href="${SITE_ORIGIN}${f.path}">${f.label}</a></li>`)
+      .join('');
+    const linksText = book.files
+      .map(f => `- ${f.label}: ${SITE_ORIGIN}${f.path}`)
+      .join('\n');
+
+    await resend.emails.send({
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: `Your free worksheets — ${book.title}`,
+      html: `<p>Thank you for picking up <strong>${book.title}</strong>. Here are your free printable worksheets:</p><ul>${linksHtml}</ul><p>Print as many blank copies as you need. If you have any trouble with the links, just reply to this email.</p>`,
+      text: `Thank you for picking up ${book.title}. Here are your free printable worksheets:\n\n${linksText}\n\nPrint as many blank copies as you need. If you have any trouble with the links, just reply to this email.`,
+    });
+
+    // Best-effort notice to the practice inbox so Ke can see signups happening.
+    // Failure here never blocks the visitor's email from having already sent.
+    resend.emails.send({
+      from: process.env.FROM_EMAIL,
+      to: process.env.TO_EMAIL,
+      subject: `Worksheet request — ${book.title}`,
+      text: `${email} requested worksheets for ${book.title}.`,
+    }).catch(e => console.error('worksheets notice email error', e));
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('worksheets-signup error', err);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+// ------------------------------------------------------------------------
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Relay listening on ' + PORT));
