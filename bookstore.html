@@ -351,7 +351,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>Complete NCMHCE Study Guide</h3>
         <div class="book-price">$29.99 &middot; Hard copy</div>
         <p>A comprehensive print study guide for the NCMHCE exam.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Study Guide</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="ncmhce-study-guide">Get This Study Guide &mdash; $29.99</a>
       </div>
 
       <div class="book-card">
@@ -359,7 +359,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>The Power of Talk</h3>
         <div class="book-price">$15.00 &middot; Ebook</div>
         <p>Book Two of The Bridging the Gap Series, published by GA Integrated Therapeutic Perspectives LLC.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Book</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="power-of-talk">Get This Book &mdash; $15.00</a>
       </div>
 
       <div class="book-card">
@@ -367,7 +367,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>The Repair Work</h3>
         <div class="book-price">$15.00 &middot; Workbook</div>
         <p>A four-part workbook series for accountability and relationship repair.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Workbook</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="repair-work">Get This Workbook &mdash; $15.00</a>
       </div>
 
       <div class="book-card">
@@ -375,7 +375,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>Bridging Two Worlds</h3>
         <div class="book-price">$15.00 &middot; Ebook</div>
         <p>An ebook exploring identity and connection across two worlds.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Ebook</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="bridging-two-worlds">Get This Ebook &mdash; $15.00</a>
       </div>
 
       <div class="book-card">
@@ -383,7 +383,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>Still Here</h3>
         <div class="book-price">$15.00 &middot; Ebook</div>
         <p>An ebook of resilience and presence through hard seasons.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Ebook</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="still-here">Get This Ebook &mdash; $15.00</a>
       </div>
 
       <div class="book-card">
@@ -391,7 +391,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>Married to the Mission</h3>
         <div class="book-price">$14.99 &middot; Paperback / Ebook</div>
         <p>A relationship guide with a clinical perspective for new and current military spouses.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get This Book</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="married-to-the-mission">Get This Book &mdash; $14.99</a>
         <a href="worksheets.html" style="display:block; text-align:center; margin-top:0.6rem; font-family:var(--font-ui); font-size:0.85rem;">Free printable worksheets &rarr;</a>
       </div>
 
@@ -400,13 +400,9 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
         <h3>Couples Worksheets, Vols. I &amp; II</h3>
         <div class="book-price">$15.00 &middot; Worksheets</div>
         <p>Practical worksheets grounded in Gottman, EFT, and ACT.</p>
-        <a href="contact.html" class="btn btn-solid btn-block">Get These Worksheets</a>
+        <a href="#" class="btn btn-solid btn-block buy-book-btn" data-book="couples-worksheets">Get These Worksheets &mdash; $15.00</a>
       </div>
 
-    </div>
-
-    <div class="note" style="margin-top:2.5rem;">
-      <strong>Checkout coming online soon.</strong> Book buttons currently route to contact. Once Stripe payment links are set for each title, they&rsquo;ll purchase directly. Cover art for remaining titles is in progress.
     </div>
 
     <div class="note" style="margin-top:1.5rem;" id="author-contact">
@@ -517,6 +513,42 @@ document.addEventListener('DOMContentLoaded', function () {
   <div id="gaitp-suggest-status"></div>
 </div>
 
+<script>
+(function () {
+  // Bookstore checkout — every "Get This ..." button posts to the relay's
+  // Stripe Checkout endpoint and redirects the browser to Stripe.
+  var RELAY_BASE = "https://gaitp.onrender.com";
+
+  document.querySelectorAll('.buy-book-btn').forEach(function (btn) {
+    var originalText = btn.textContent;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (btn.classList.contains('is-loading')) return;
+      btn.classList.add('is-loading');
+      btn.textContent = 'Loading checkout…';
+
+      fetch(RELAY_BASE + '/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ book: btn.getAttribute('data-book') })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok && data.url) {
+            window.location.href = data.url;
+          } else {
+            throw new Error(data.error || 'Checkout could not start.');
+          }
+        })
+        .catch(function () {
+          btn.classList.remove('is-loading');
+          btn.textContent = originalText;
+          alert("Checkout isn't available right now. Please try again in a moment, or reach out from the Contact page.");
+        });
+    });
+  });
+})();
+</script>
 <script>
 (function () {
   // Set this to your deployed relay endpoint, e.g. "https://gaitp.onrender.com"

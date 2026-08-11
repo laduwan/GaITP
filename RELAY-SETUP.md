@@ -1,8 +1,9 @@
 # Relay — setup
 
-The website pages are static and deploy as-is. Three things need one small backend so they can
-actually work: the **Send a Message** form (`reach.html`), the site-wide suggestion box, and the
-**worksheets delivery** form (`worksheets.html`). Here's the whole setup.
+The website pages are static and deploy as-is. Four things need one small backend so they can
+actually work: the **Send a Message** form (`reach.html`), the site-wide suggestion box, the
+**worksheets delivery** form (`worksheets.html`), and the **bookstore checkout** (`bookstore.html`).
+Here's the whole setup.
 
 ## What it does
 - A visitor submits an anonymous message on `reach.html`.
@@ -12,7 +13,10 @@ actually work: the **Send a Message** form (`reach.html`), the site-wide suggest
   you make every clinical and scheduling call.
 - A visitor requesting free worksheets on `worksheets.html` gets an email with their download
   links; you get a one-line notice so you can see signups happening.
-- Nothing is stored by the relay. (Your email/SMS providers keep their own logs.)
+- A visitor buying a book on `bookstore.html` pays through **Stripe Checkout**; once Stripe
+  confirms payment, they land on `thank-you.html` with live download links and get the same
+  links by email. See "Bookstore checkout" below.
+- Nothing is stored by the relay. (Your email/SMS/Stripe providers keep their own logs.)
 
 ## Deploy the relay (Render — Web Service, Node)
 The relay code lives in `/relay` in this same repo, with its own `package.json` so it can be
@@ -38,6 +42,12 @@ deployed as a **separate Render service** from the static site — the static si
    - `DND_START` — quiet-hours start, `HH:MM` 24h (e.g. `21:00`)
    - `DND_END` — quiet-hours end, `HH:MM` 24h (e.g. `08:00`) — overnight is fine
    - `DND_TZ` — your timezone (default `America/New_York`)
+   - `STRIPE_SECRET_KEY` — `sk_live_...` (or `sk_test_...` while testing), from a **Stripe account
+     of its own** — keep it separate from any other Stripe account you use
+   - `STRIPE_WEBHOOK_SECRET` — `whsec_...`, from the Stripe webhook you configure below
+   - `DOWNLOAD_SIGNING_SECRET` — any long random string you choose; signs the download links
+   - `RELAY_ORIGIN` — the relay's own public URL (e.g. `https://gaitp.onrender.com`) — used to
+     build download links, since the relay is a different host from the static site
 3. Render gives you a URL like `https://gaitp-relay.onrender.com`.
 
 ## Point the site pages at the relay
@@ -63,6 +73,29 @@ use the same `RELAY_BASE` value, just different endpoints (`/suggestion`, `/rela
 3. Point a new page's form at `/worksheets-signup` with `book: '<book-key>'` in the request body
    (copy `worksheets.html` as a starting point).
 No database, no admin panel — just a lookup table in the relay code.
+
+## Bookstore checkout
+`bookstore.html` buy buttons call the relay, which uses Stripe Checkout for payment and a
+signed, time-limited link for delivery. There's no order database — Stripe's dashboard is the
+system of record for payments (receipts, refunds, history); the relay only mints a download link
+at the moment it verifies a payment actually succeeded.
+
+1. **Create a Stripe account** (or use the dedicated one set up for this store) and grab its API
+   keys from the Stripe dashboard.
+2. **Add a webhook** in Stripe pointing at `https://YOUR-RELAY/webhook/stripe`, listening for the
+   `checkout.session.completed` event. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+3. **Upload the actual book files** to `relay/private-books/<book-key>/` in this repo (or however
+   you deploy the relay's filesystem) — filenames must match what's listed in
+   `relay/store-config.js`. These files are served only through the signed `/download` route;
+   they're never linked directly and never referenced from the public static site.
+4. **To add a new title:** add an entry to `PRODUCTS` in `relay/store-config.js` (price, format,
+   file names), drop the file(s) in `relay/private-books/<book-key>/`, and add a matching card +
+   button in `bookstore.html` with `data-book="<book-key>"`. Nothing else needs to change.
+5. When a purchase completes, the buyer is redirected to `thank-you.html`, which polls the relay
+   for live download links, and also gets those same links by email (Resend) — you get a
+   one-line sale notice too.
+6. Download links expire after 7 days. If one expires, the buyer can reply to their purchase
+   email for a fresh one — no self-serve "resend" flow exists yet.
 
 ## Text alerts on/off toggle
 Email always sends. Texts (SMS) are the interruptible alert you can silence anytime
