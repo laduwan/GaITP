@@ -32,8 +32,19 @@ const express = require('express');
 const cors = require('cors');
 const { Resend } = require('resend');
 const twilio = require('twilio');
+const crypto = require('crypto');
+const fs = require('fs');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { getProduct, filePathFor } = require('./store-config');
 
 const app = express();
+
+// NOTE: the Stripe webhook route needs the RAW body for signature
+// verification, so it's registered further down with its own raw parser
+// BEFORE the global express.json() middleware would otherwise consume it.
+// Express matches routes in registration order, so this ordering matters.
+app.post('/webhook/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
 app.use(express.json({ limit: '32kb' }));
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || true }));
 
@@ -333,6 +344,205 @@ app.post('/worksheets-signup', async (req, res) => {
 });
 // ------------------------------------------------------------------------
 
+
+
+// ---- Bookstore / ecommerce ----------------------------------------------
+// Stripe Checkout for payment, signed time-limited links for delivery.
+// No order database — Stripe itself is the system of record for payments
+// (dashboard has full history/receipts/refunds). We only mint a signed
+// download token at the moment of a *verified* successful payment.
+//
+// Env vars required:
+//   STRIPE_SECRET_KEY       - sk_live_... or sk_test_... (separate Stripe
+//                              account from CounselorReady, per Ke's call)
+//   STRIPE_WEBHOOK_SECRET   - whsec_... from the Stripe webhook config
+//   DOWNLOAD_SIGNING_SECRET - any long random string, used to sign links
+//   SITE_ORIGIN             - already defined above for worksheets
+
+const DOWNLOAD_SIGNING_SECRET = process.env.DOWNLOAD_SIGNING_SECRET || '';
+const DOWNLOAD_LINK_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, multi-use within window
+
+// Relay itself serves /download (it's a different host than the static
+// site), so build links against the relay's own public URL, not SITE_ORIGIN
+// (which is the static site, used below for Checkout's success/cancel URLs).
+// SITE_ORIGIN itself is already declared above, in the worksheet-delivery section.
+const RELAY_ORIGIN = process.env.RELAY_ORIGIN || 'https://gaitp.onrender.com';
+
+function signDownload(bookKey, filename, expiresAt) {
+  const payload = `${bookKey}:${filename}:${expiresAt}`;
+  return crypto.createHmac('sha256', DOWNLOAD_SIGNING_SECRET).update(payload).digest('hex');
+}
+
+function buildDownloadLink(bookKey, filename) {
+  const expiresAt = Date.now() + DOWNLOAD_LINK_TTL_MS;
+  const sig = signDownload(bookKey, filename, expiresAt);
+  const params = new URLSearchParams({ book: bookKey, file: filename, exp: String(expiresAt), sig });
+  return `${RELAY_ORIGIN}/download?${params.toString()}`;
+}
+
+// Create a Checkout Session for one book. Front end POSTs { book } and
+// redirects the browser to the returned url.
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const bookKey = (req.body.book || '').toString().trim();
+    const product = getProduct(bookKey);
+    if (!product) return res.status(400).json({ ok: false, error: 'Unknown book.' });
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: product.title + (product.subtitle ? ' — ' + product.subtitle : ''),
+            description: product.format,
+          },
+          unit_amount: product.priceCents,
+        },
+        quantity: 1,
+      }],
+      metadata: { book: bookKey },
+      success_url: `${SITE_ORIGIN}/thank-you.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_ORIGIN}/bookstore.html`,
+    });
+
+    return res.json({ ok: true, url: session.url });
+  } catch (err) {
+    console.error('create-checkout-session error', err);
+    return res.status(500).json({ ok: false, error: 'Could not start checkout. Please try again.' });
+  }
+});
+
+// Stripe calls this after a successful payment (registered above, before
+// express.json(), so it gets the raw body needed for signature checks).
+async function handleStripeWebhook(req, res) {
+  let event;
+  try {
+    const sig = req.headers['stripe-signature'];
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const bookKey = session.metadata && session.metadata.book;
+    const customerEmail = session.customer_details && session.customer_details.email;
+    const product = getProduct(bookKey);
+
+    if (product && customerEmail) {
+      try {
+        const links = product.files.map(f => ({
+          label: f.label,
+          url: buildDownloadLink(bookKey, f.filename),
+        }));
+
+        const linksHtml = links.map(l => `<li><a href="${l.url}">${l.label}</a></li>`).join('');
+        const linksText = links.map(l => `- ${l.label}: ${l.url}`).join('\n');
+
+        await resend.emails.send({
+          from: process.env.FROM_EMAIL,
+          to: customerEmail,
+          subject: `Your purchase — ${product.title}`,
+          html: `<p>Thank you for purchasing <strong>${product.title}</strong>. Your download link${links.length > 1 ? 's are' : ' is'} below (active for 7 days):</p><ul>${linksHtml}</ul><p>If you have any trouble, just reply to this email.</p>`,
+          text: `Thank you for purchasing ${product.title}. Your download link(s) (active for 7 days):\n\n${linksText}\n\nIf you have any trouble, just reply to this email.`,
+        });
+
+        resend.emails.send({
+          from: process.env.FROM_EMAIL,
+          to: process.env.TO_EMAIL,
+          subject: `Sale — ${product.title}`,
+          text: `${customerEmail} purchased ${product.title} for $${(session.amount_total / 100).toFixed(2)}.`,
+        }).catch(e => console.error('sale notice email error', e));
+      } catch (err) {
+        console.error('post-payment email error', err);
+        // Payment already succeeded regardless — Stripe dashboard has the
+        // record. The thank-you page's live download button is the backstop
+        // if this email fails.
+      }
+    }
+  }
+
+  res.json({ received: true });
+}
+
+// Thank-you page polls this with the Stripe session_id from the redirect
+// to confirm payment status and get the book title/download links WITHOUT
+// needing any local order storage — Stripe is asked directly, live.
+app.get('/session-status', async (req, res) => {
+  try {
+    const sessionId = (req.query.session_id || '').toString();
+    if (!sessionId) return res.status(400).json({ ok: false, error: 'Missing session_id.' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status !== 'paid') {
+      return res.json({ ok: true, paid: false });
+    }
+
+    const bookKey = session.metadata && session.metadata.book;
+    const product = getProduct(bookKey);
+    if (!product) return res.status(400).json({ ok: false, error: 'Unknown book on this session.' });
+
+    const links = product.files.map(f => ({
+      label: f.label,
+      url: buildDownloadLink(bookKey, f.filename),
+    }));
+
+    return res.json({
+      ok: true,
+      paid: true,
+      title: product.title,
+      email: session.customer_details && session.customer_details.email,
+      links,
+    });
+  } catch (err) {
+    console.error('session-status error', err);
+    return res.status(500).json({ ok: false, error: 'Could not verify payment.' });
+  }
+});
+
+// The actual file transfer. Only reachable with a valid, unexpired
+// signature — never linked publicly, never listed, never in the static repo.
+app.get('/download', (req, res) => {
+  try {
+    const bookKey = (req.query.book || '').toString();
+    const filename = (req.query.file || '').toString();
+    const exp = parseInt(req.query.exp, 10);
+    const sig = (req.query.sig || '').toString();
+
+    if (!bookKey || !filename || !exp || !sig) {
+      return res.status(400).send('Bad request.');
+    }
+    if (Date.now() > exp) {
+      return res.status(410).send('This download link has expired. Reply to your purchase email and we\'ll send a fresh one.');
+    }
+
+    const expected = signDownload(bookKey, filename, exp);
+    const sigBuf = Buffer.from(sig, 'hex');
+    const expectedBuf = Buffer.from(expected, 'hex');
+    const validSig = sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
+    if (!validSig) return res.status(403).send('Invalid download link.');
+
+    const product = getProduct(bookKey);
+    if (!product || !product.files.some(f => f.filename === filename)) {
+      return res.status(404).send('File not found.');
+    }
+
+    const filePath = filePathFor(bookKey, filename);
+    if (!fs.existsSync(filePath)) {
+      console.error('Paid file missing on disk:', filePath);
+      return res.status(404).send('This file isn\'t available yet. Reply to your purchase email and we\'ll sort it out.');
+    }
+
+    return res.download(filePath, filename);
+  } catch (err) {
+    console.error('download route error', err);
+    return res.status(500).send('Something went wrong.');
+  }
+});
+// ------------------------------------------------------------------------
 
 
 const PORT = process.env.PORT || 3000;

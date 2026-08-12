@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You | GA Integrated Therapeutic Perspectives</title>
+<meta name="robots" content="noindex">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Karla:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink:        #3A2A30;
+  --ink-body:   #4A3F44;
+  --ink-soft:   #7A6E73;
+  --green:      #1E7E48;
+  --green-deep: #145C34;
+  --green-tint: #EAF2EC;
+  --mauve:      #A8808C;
+  --mauve-deep: #7E5966;
+  --mauve-tint: #F4ECEF;
+  --plum:       #51393F;
+  --bg:         #FFFFFF;
+  --bg-cream:   #FAF7F4;
+  --line:       #E6DDD9;
+  --white:      #FFFFFF;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'EB Garamond', Georgia, serif;
+  --font-ui: 'Karla', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg-cream);
+  color: var(--ink-body);
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mauve-deep);
+  margin-bottom: 0.75rem;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 2.2rem;
+  margin: 0 0 1rem;
+}
+
+p { margin: 0 0 1.25rem; }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.book-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--ink);
+  margin: 0 0 1rem;
+}
+
+.dl-link {
+  display: block;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--white);
+  background: var(--green);
+  text-decoration: none;
+  padding: 0.85rem 1.25rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+.dl-link:hover { background: var(--green-deep); }
+
+.note {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin-top: 1.5rem;
+}
+
+.state { font-family: var(--font-ui); color: var(--ink-soft); }
+
+.error-box {
+  background: var(--mauve-tint);
+  border: 1px solid var(--mauve);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+a.back {
+  display: inline-block;
+  margin-top: 2.5rem;
+  font-family: var(--font-ui);
+  color: var(--mauve-deep);
+  text-decoration: none;
+  border-bottom: 1px solid var(--mauve);
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow">GA Integrated Therapeutic Perspectives</div>
+  <h1>Thank you for your purchase</h1>
+  <p class="state" id="status-text">Confirming your payment&hellip;</p>
+
+  <div id="result"></div>
+
+  <a class="back" href="bookstore.html">&larr; Back to the bookstore</a>
+</div>
+
+<script>
+(function () {
+  var RELAY_BASE = "https://gaitp.onrender.com";
+
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('session_id');
+  var statusText = document.getElementById('status-text');
+  var result = document.getElementById('result');
+
+  if (!sessionId) {
+    statusText.textContent = '';
+    result.innerHTML = '<div class="error-box">We couldn\'t find your order details. If you just completed a purchase, check your email for the download link, or reach out from the <a href="contact.html">Contact page</a>.</div>';
+    return;
+  }
+
+  fetch(RELAY_BASE + '/session-status?session_id=' + encodeURIComponent(sessionId))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.ok) throw new Error(data.error || 'Could not verify payment.');
+
+      if (!data.paid) {
+        statusText.textContent = '';
+        result.innerHTML = '<div class="error-box">This payment hasn\'t completed yet. If you believe this is an error, reach out from the <a href="contact.html">Contact page</a> and we\'ll sort it out.</div>';
+        return;
+      }
+
+      statusText.textContent = '';
+      var linksHtml = data.links.map(function (l) {
+        return '<a class="dl-link" href="' + l.url + '">' + l.label + '</a>';
+      }).join('');
+
+      result.innerHTML =
+        '<div class="card">' +
+          '<div class="book-title">' + data.title + '</div>' +
+          linksHtml +
+          '<div class="note">A copy of ' + (data.links.length > 1 ? 'these links has' : 'this link has') + ' also been emailed' + (data.email ? ' to ' + data.email : '') + '. Links stay active for 7 days &mdash; if they expire, just reply to that email and we\'ll send a fresh one.</div>' +
+        '</div>';
+    })
+    .catch(function (err) {
+      statusText.textContent = '';
+      result.innerHTML = '<div class="error-box">' + (err.message || 'Something went wrong confirming your purchase.') + ' Check your email for the download link, or reach out from the <a href="contact.html">Contact page</a>.</div>';
+    });
+})();
+</script>
+
+</body>
+</html>
