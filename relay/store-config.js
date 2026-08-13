@@ -22,9 +22,9 @@ const PRODUCTS = {
     title: 'Married to the Mission',
     subtitle: 'A Relationship Guide for the New Military Spouse',
     priceCents: 1499,
-    format: 'Ebook (PDF)',
+    format: 'Ebook (EPUB)',
     files: [
-      { label: 'Married to the Mission — Ebook', filename: 'MarriedToTheMission.pdf' },
+      { label: 'Married to the Mission — Ebook', filename: 'MarriedToTheMission.epub' },
     ],
   },
   'power-of-talk': {
@@ -78,9 +78,18 @@ const PRODUCTS = {
     title: 'Complete NCMHCE Study Guide',
     subtitle: null,
     priceCents: 2999,
-    format: 'Ebook (PDF)',
+    format: 'Ebook (EPUB)',
     files: [
-      { label: 'Complete NCMHCE Study Guide — Ebook', filename: 'NCMHCEStudyGuide.pdf' },
+      { label: 'Complete NCMHCE Study Guide — Ebook', filename: 'NCMHCEStudyGuide.epub' },
+    ],
+  },
+  'beyond-his-hers-and-them': {
+    title: 'Beyond His, Hers, and Them',
+    subtitle: 'The Blueprint for Queer Love',
+    priceCents: 1500,
+    format: 'Ebook (EPUB)',
+    files: [
+      { label: 'Beyond His, Hers, and Them — Ebook', filename: 'BeyondHisHersAndThem.epub' },
     ],
   },
 };
