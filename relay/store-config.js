@@ -36,34 +36,32 @@ const PRODUCTS = {
       { label: 'The Power of Talk — Ebook', filename: 'ThePowerOfTalk.epub' },
     ],
   },
-  'repair-work': {
-    title: 'The Repair Work',
-    subtitle: 'A Workbook for Accountability and Relationship Repair',
-    priceCents: 1500,
+  'repair-work-betrayed': {
+    title: 'The Repair Work — For the Betrayed',
+    subtitle: 'A Rupture Repair Protocol',
+    priceCents: 900,
     format: 'Workbook (PDF)',
     files: [
       { label: 'The Repair Work — For the Betrayed Partner', filename: 'TheRepairWork_Betrayed.pdf' },
+    ],
+  },
+  'repair-work-unfaithful': {
+    title: 'The Repair Work — For the Unfaithful Partner',
+    subtitle: 'A Rupture Repair Protocol',
+    priceCents: 900,
+    format: 'Workbook (PDF)',
+    files: [
       { label: 'The Repair Work — For the Unfaithful Partner', filename: 'TheRepairWork_Unfaithful.pdf' },
+      { label: 'For the Unfaithful Partner — Complete Worksheet Set (included free)', filename: 'TheRepairWork_Unfaithful_Worksheets.pdf' },
     ],
   },
-  // Key and EPUB filename keep the old working title so existing
-  // purchase links and the private-books/ folder stay valid.
   'bridging-two-worlds': {
-    title: 'Understanding Intimacy',
-    subtitle: 'Bridging the Gap, Book One',
+    title: 'Bridging Two Worlds',
+    subtitle: 'Understanding Intimacy — Bridging the Gap, Book One',
     priceCents: 1500,
     format: 'Ebook',
     files: [
-      { label: 'Understanding Intimacy — Ebook', filename: 'BridgingTwoWorlds.epub' },
-    ],
-  },
-  'still-here': {
-    title: 'Still Here',
-    subtitle: 'Resilience and Presence Through Hard Seasons',
-    priceCents: 1500,
-    format: 'Ebook',
-    files: [
-      { label: 'Still Here — Ebook', filename: 'StillHere.epub' },
+      { label: 'Bridging Two Worlds — Ebook', filename: 'BridgingTwoWorlds.epub' },
     ],
   },
   'couples-worksheets': {
