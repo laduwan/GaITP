@@ -46,13 +46,15 @@ const PRODUCTS = {
       { label: 'The Repair Work — For the Unfaithful Partner', filename: 'TheRepairWork_Unfaithful.pdf' },
     ],
   },
+  // Key and EPUB filename keep the old working title so existing
+  // purchase links and the private-books/ folder stay valid.
   'bridging-two-worlds': {
-    title: 'Bridging Two Worlds',
-    subtitle: 'Understanding Intimacy — Bridging the Gap, Book One',
+    title: 'Understanding Intimacy',
+    subtitle: 'Bridging the Gap, Book One',
     priceCents: 1500,
     format: 'Ebook',
     files: [
-      { label: 'Bridging Two Worlds — Ebook', filename: 'BridgingTwoWorlds.epub' },
+      { label: 'Understanding Intimacy — Ebook', filename: 'BridgingTwoWorlds.epub' },
     ],
   },
   'still-here': {
