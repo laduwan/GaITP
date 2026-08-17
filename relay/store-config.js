@@ -43,6 +43,7 @@ const PRODUCTS = {
     format: 'Workbook (PDF)',
     files: [
       { label: 'The Repair Work — For the Betrayed Partner', filename: 'TheRepairWork_Betrayed.pdf' },
+      { label: 'For the Betrayed — Complete Worksheet Set (included free)', filename: 'TheRepairWork_Betrayed_Worksheets.pdf' },
     ],
   },
   'repair-work-unfaithful': {
