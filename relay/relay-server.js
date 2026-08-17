@@ -291,6 +291,13 @@ const WORKSHEET_BOOKS = {
       { label: 'The Complete Worksheet Set (printable)', path: '/downloads/repair-work-unfaithful/TheRepairWork_Unfaithful_Worksheets.pdf' },
     ],
   },
+  'repair-work-betrayed-claim': {
+    title: 'The Repair Work: For the Betrayed',
+    accessCode: 'BETRAYED2026',
+    files: [
+      { label: 'The Complete Worksheet Set (printable)', path: '/downloads/repair-work-betrayed/TheRepairWork_Betrayed_Worksheets.pdf' },
+    ],
+  },
 };
 
 // Same lightweight in-memory rate limiter pattern as /suggestion.
