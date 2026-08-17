@@ -351,7 +351,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
 </header>
 
 <section class="page-header">
-  <div class="container"><span class="eyebrow">Free with your copy</span><h1>Married to the Mission &mdash; Worksheets.</h1><p class="lede">Every worksheet from the book, formatted for printing at home. Enter your email and we'll send the download links right away.</p></div>
+  <div class="container"><span class="eyebrow">Free with your copy</span><h1>Married to the Mission &mdash; Worksheets.</h1><p class="lede">Every worksheet from the book, formatted for printing at home. Enter the code from the back of your book along with your email, and we'll send the download links right away.</p></div>
 </section>
 
 <section style="padding-top:0;">
@@ -364,9 +364,11 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); outline:
           <li><strong>The Printable Worksheets</strong> &mdash; all 9 worksheets from the book, ready to print and fill in.</li>
           <li><strong>The Eight Conversations Checklist</strong> &mdash; a standalone printable for the conversation every couple should have before marrying into the military.</li>
         </ul>
-        <div class="note">No account needed. Download links are sent straight to your inbox &mdash; nothing is stored beyond what's needed to send them.</div>
+        <div class="note">Your book's claim code is printed in the back matter, just before the acknowledgments. No account needed &mdash; download links are sent straight to your inbox.</div>
       </div>
       <div class="ws-form">
+        <label for="ws-code">Your book's claim code</label>
+        <input id="ws-code" type="text" maxlength="60" placeholder="e.g. MARRIED2026" style="text-transform:uppercase;">
         <label for="ws-email">Your email</label>
         <input id="ws-email" type="email" maxlength="200" placeholder="you@example.com">
         <button id="ws-submit" class="btn btn-solid" type="button">Send Me the Worksheets</button>
@@ -548,6 +550,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Set this to your deployed relay endpoint, e.g. "https://gaitp.onrender.com"
   var RELAY_BASE = "https://gaitp.onrender.com";
 
+  var codeEl = document.getElementById('ws-code');
   var emailEl = document.getElementById('ws-email');
   var submitBtn = document.getElementById('ws-submit');
   var statusEl = document.getElementById('ws-status');
@@ -559,7 +562,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   submitBtn.addEventListener('click', function () {
     var email = emailEl.value.trim();
+    var code = codeEl.value.trim();
 
+    if (!code) {
+      statusEl.textContent = 'Please enter the claim code from the back of your book.';
+      statusEl.className = 'err';
+      return;
+    }
     if (!isValidEmail(email)) {
       statusEl.textContent = 'Please enter a valid email address.';
       statusEl.className = 'err';
@@ -578,16 +587,20 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(RELAY_BASE + '/worksheets-signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, book: 'married-to-the-mission' }),
+      body: JSON.stringify({ email: email, code: code, book: 'married-to-the-mission' }),
     })
-      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function () {
+      .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'Something went wrong. Please try again.');
+        }
         emailEl.value = '';
+        codeEl.value = '';
         confirmEl.classList.add('show');
         statusEl.textContent = '';
       })
-      .catch(function () {
-        statusEl.textContent = 'Something went wrong. Please try again, or email info@gaintegratedperspectives.com.';
+      .catch(function (err) {
+        statusEl.textContent = err.message || 'Something went wrong. Please try again, or email info@gaintegratedperspectives.com.';
         statusEl.className = 'err';
       })
       .finally(function () { submitBtn.disabled = false; });
