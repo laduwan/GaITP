@@ -275,6 +275,7 @@ const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://gaintegratedperspectives
 const WORKSHEET_BOOKS = {
   'married-to-the-mission': {
     title: 'Married to the Mission',
+    accessCode: 'MARRIED2026',
     files: [
       { label: 'The Printable Worksheets (all 9, ready to print)', path: '/downloads/married-to-the-mission/MarriedToTheMission_PrintableWorksheets.pdf' },
       { label: 'The Eight Conversations Checklist', path: '/downloads/married-to-the-mission/MarriedToTheMission_EightConversationsChecklist.pdf' },
