@@ -67,9 +67,11 @@ use the same `RELAY_BASE` value, just different endpoints (`/suggestion`, `/rela
 
 ## Worksheet delivery for new titles
 `relay-server.js` has a `WORKSHEET_BOOKS` object mapping a book key (like
-`married-to-the-mission`) to its title and PDF file paths. To add a new title:
-1. Drop its PDFs in `/downloads/<book-key>/` in this repo.
-2. Add an entry to `WORKSHEET_BOOKS` in `relay/relay-server.js` with the matching paths.
+`married-to-the-mission`) to its title and PDF filenames. To add a new title:
+1. Drop its PDFs in `relay/private-books/worksheets/<book-key>/` (NOT in the public static site).
+2. Add an entry to `WORKSHEET_BOOKS` in `relay/relay-server.js` with the matching filenames.
+   Worksheets are emailed as signed, 7-day `/download` links from the relay — the same
+   mechanism as paid books — so `DOWNLOAD_SIGNING_SECRET` and `RELAY_ORIGIN` must be set.
 3. Point a new page's form at `/worksheets-signup` with `book: '<book-key>'` in the request body
    (copy `worksheets.html` as a starting point).
 No database, no admin panel — just a lookup table in the relay code.
