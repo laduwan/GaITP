@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /thank-you.html
+Disallow: /sms-toggle.html
+
+Sitemap: https://gaintegratedperspectives.com/sitemap.xml
