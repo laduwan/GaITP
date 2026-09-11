@@ -35,7 +35,8 @@ const twilio = require('twilio');
 const crypto = require('crypto');
 const fs = require('fs');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { getProduct, filePathFor } = require('./store-config');
+const path = require('path');
+const { getProduct, filePathFor, PRIVATE_BOOKS_DIR } = require('./store-config');
 
 const app = express();
 
@@ -266,7 +267,10 @@ app.post('/suggestion', async (req, res) => {
 
 // ---- Worksheet delivery --------------------------------------------------
 // Stateless like everything else here: receives an email, sends download
-// links back to that address via Resend, forgets it. No list is built,
+// links back to that address via Resend, forgets it.
+// Worksheet PDFs live in relay/private-books/worksheets/<book-key>/ and are
+// delivered ONLY as signed, time-limited /download links (same mechanism as
+// paid books). They are no longer in the public static site's /downloads/. No list is built,
 // no database is touched. Add new entries to WORKSHEET_BOOKS to support
 // additional titles without changing the route logic.
 
@@ -277,8 +281,8 @@ const WORKSHEET_BOOKS = {
     title: 'Married to the Mission',
     accessCode: 'MARRIED2026',
     files: [
-      { label: 'The Printable Worksheets (all 9, ready to print)', path: '/downloads/married-to-the-mission/MarriedToTheMission_PrintableWorksheets.pdf' },
-      { label: 'The Eight Conversations Checklist', path: '/downloads/married-to-the-mission/MarriedToTheMission_EightConversationsChecklist.pdf' },
+      { label: 'The Printable Worksheets (all 9, ready to print)', filename: 'MarriedToTheMission_PrintableWorksheets.pdf' },
+      { label: 'The Eight Conversations Checklist', filename: 'MarriedToTheMission_EightConversationsChecklist.pdf' },
     ],
   },
   'repair-work-unfaithful-claim': {
@@ -288,17 +292,22 @@ const WORKSHEET_BOOKS = {
     // Amazon/Gumroad and have no Stripe record on this site.
     accessCode: 'UNFAITHFUL2026',
     files: [
-      { label: 'The Complete Worksheet Set (printable)', path: '/downloads/repair-work-unfaithful/TheRepairWork_Unfaithful_Worksheets.pdf' },
+      { label: 'The Complete Worksheet Set (printable)', filename: 'TheRepairWork_Unfaithful_Worksheets.pdf' },
     ],
   },
   'repair-work-betrayed-claim': {
     title: 'The Repair Work: For the Betrayed',
     accessCode: 'BETRAYED2026',
     files: [
-      { label: 'The Complete Worksheet Set (printable)', path: '/downloads/repair-work-betrayed/TheRepairWork_Betrayed_Worksheets.pdf' },
+      { label: 'The Complete Worksheet Set (printable)', filename: 'TheRepairWork_Betrayed_Worksheets.pdf' },
     ],
   },
 };
+
+// Signed-link namespace for worksheet files, so they can never collide with
+// (or be mistaken for) a paid product key in /download.
+const WORKSHEET_KEY_PREFIX = 'ws:';
+const WORKSHEETS_DIR = path.join(PRIVATE_BOOKS_DIR, 'worksheets');
 
 // Same lightweight in-memory rate limiter pattern as /suggestion.
 const worksheetsRateLimit = new Map();
@@ -337,19 +346,23 @@ app.post('/worksheets-signup', async (req, res) => {
       }
     }
 
-    const linksHtml = book.files
-      .map(f => `<li><a href="${SITE_ORIGIN}${f.path}">${f.label}</a></li>`)
+    const links = book.files.map(f => ({
+      label: f.label,
+      url: buildDownloadLink(WORKSHEET_KEY_PREFIX + bookKey, f.filename),
+    }));
+    const linksHtml = links
+      .map(l => `<li><a href="${l.url}">${l.label}</a></li>`)
       .join('');
-    const linksText = book.files
-      .map(f => `- ${f.label}: ${SITE_ORIGIN}${f.path}`)
+    const linksText = links
+      .map(l => `- ${l.label}: ${l.url}`)
       .join('\n');
 
     await resend.emails.send({
       from: process.env.FROM_EMAIL,
       to: email,
       subject: `Your free worksheets — ${book.title}`,
-      html: `<p>Thank you for picking up <strong>${book.title}</strong>. Here are your free printable worksheets:</p><ul>${linksHtml}</ul><p>Print as many blank copies as you need. If you have any trouble with the links, just reply to this email.</p>`,
-      text: `Thank you for picking up ${book.title}. Here are your free printable worksheets:\n\n${linksText}\n\nPrint as many blank copies as you need. If you have any trouble with the links, just reply to this email.`,
+      html: `<p>Thank you for picking up <strong>${book.title}</strong>. Here are your free printable worksheets:</p><ul>${linksHtml}</ul><p>These links are good for 7 days, so save the PDFs to your device. Print as many blank copies as you need. If you have any trouble with the links, just reply to this email.</p>`,
+      text: `Thank you for picking up ${book.title}. Here are your free printable worksheets:\n\n${linksText}\n\nThese links are good for 7 days, so save the PDFs to your device. Print as many blank copies as you need. If you have any trouble with the links, just reply to this email.`,
     });
 
     // Best-effort notice to the practice inbox so Ke can see signups happening.
@@ -550,12 +563,22 @@ app.get('/download', (req, res) => {
     const validSig = sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
     if (!validSig) return res.status(403).send('Invalid download link.');
 
-    const product = getProduct(bookKey);
-    if (!product || !product.files.some(f => f.filename === filename)) {
-      return res.status(404).send('File not found.');
+    let filePath;
+    if (bookKey.startsWith(WORKSHEET_KEY_PREFIX)) {
+      // Free worksheet (claim-code gated) — look up in WORKSHEET_BOOKS
+      const wsKey = bookKey.slice(WORKSHEET_KEY_PREFIX.length);
+      const wsBook = Object.prototype.hasOwnProperty.call(WORKSHEET_BOOKS, wsKey) ? WORKSHEET_BOOKS[wsKey] : null;
+      if (!wsBook || !wsBook.files.some(f => f.filename === filename)) {
+        return res.status(404).send('File not found.');
+      }
+      filePath = path.join(WORKSHEETS_DIR, wsKey, filename);
+    } else {
+      const product = getProduct(bookKey);
+      if (!product || !product.files.some(f => f.filename === filename)) {
+        return res.status(404).send('File not found.');
+      }
+      filePath = filePathFor(bookKey, filename);
     }
-
-    const filePath = filePathFor(bookKey, filename);
     if (!fs.existsSync(filePath)) {
       console.error('Paid file missing on disk:', filePath);
       return res.status(404).send('This file isn\'t available yet. Reply to your purchase email and we\'ll sort it out.');
