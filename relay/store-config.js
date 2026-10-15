@@ -56,13 +56,25 @@ const PRODUCTS = {
       { label: 'For the Unfaithful Partner — Complete Worksheet Set (included free)', filename: 'TheRepairWork_Unfaithful_Worksheets.pdf' },
     ],
   },
-  'bridging-two-worlds': {
-    title: 'Bridging Two Worlds',
-    subtitle: 'Understanding Intimacy — Bridging the Gap, Book One',
+  'repair-work-bundle': {
+    title: 'The Repair Work — Complete Set',
+    subtitle: 'For the Betrayed + For the Unfaithful Partner',
+    priceCents: 1500,
+    format: 'Workbooks (PDF)',
+    files: [
+      { label: 'The Repair Work — For the Betrayed Partner', filename: 'TheRepairWork_Betrayed.pdf', dir: 'repair-work-betrayed' },
+      { label: 'For the Betrayed — Complete Worksheet Set (included free)', filename: 'TheRepairWork_Betrayed_Worksheets.pdf', dir: 'repair-work-betrayed' },
+      { label: 'The Repair Work — For the Unfaithful Partner', filename: 'TheRepairWork_Unfaithful.pdf', dir: 'repair-work-unfaithful' },
+      { label: 'For the Unfaithful Partner — Complete Worksheet Set (included free)', filename: 'TheRepairWork_Unfaithful_Worksheets.pdf', dir: 'repair-work-unfaithful' },
+    ],
+  },
+  'understanding-intimacy': {
+    title: 'Understanding Intimacy',
+    subtitle: 'Bridging the Gap, Book One',
     priceCents: 1500,
     format: 'Ebook',
     files: [
-      { label: 'Bridging Two Worlds — Ebook', filename: 'BridgingTwoWorlds.epub' },
+      { label: 'Understanding Intimacy — Ebook', filename: 'UnderstandingIntimacy.epub' },
     ],
   },
   'couples-worksheets': {
@@ -119,8 +131,11 @@ function getProduct(key) {
   return PRODUCTS[key] || null;
 }
 
-function filePathFor(bookKey, filename) {
-  return path.join(PRIVATE_BOOKS_DIR, bookKey, filename);
+// Resolve a product file on disk. A file may carry an optional `dir` (used by
+// bundles whose files live in another product's folder); otherwise the
+// product key is the folder name.
+function filePathFor(bookKey, file) {
+  return path.join(PRIVATE_BOOKS_DIR, file.dir || bookKey, file.filename);
 }
 
 module.exports = { PRODUCTS, getProduct, filePathFor, PRIVATE_BOOKS_DIR };

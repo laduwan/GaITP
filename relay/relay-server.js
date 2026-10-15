@@ -574,10 +574,11 @@ app.get('/download', (req, res) => {
       filePath = path.join(WORKSHEETS_DIR, wsKey, filename);
     } else {
       const product = getProduct(bookKey);
-      if (!product || !product.files.some(f => f.filename === filename)) {
+      const file = product ? product.files.find(f => f.filename === filename) : null;
+      if (!file) {
         return res.status(404).send('File not found.');
       }
-      filePath = filePathFor(bookKey, filename);
+      filePath = filePathFor(bookKey, file);
     }
     if (!fs.existsSync(filePath)) {
       console.error('Paid file missing on disk:', filePath);
