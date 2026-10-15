@@ -84,6 +84,26 @@ const PRODUCTS = {
       { label: 'Complete NCMHCE Study Guide — Ebook', filename: 'NCMHCEStudyGuide.epub' },
     ],
   },
+  'ncmhce-study-guide-2e': {
+    title: 'The Complete NCMHCE Study Guide — 2nd Edition',
+    subtitle: 'The Next-Move Method · For exams on or after July 1, 2027',
+    priceCents: 3499,
+    format: 'Ebook (PDF + EPUB)',
+    files: [
+      { label: 'NCMHCE Study Guide, 2nd Edition — PDF (1056 pp)', filename: 'NCMHCEStudyGuide_2E.pdf' },
+      { label: 'NCMHCE Study Guide, 2nd Edition — EPUB', filename: 'NCMHCEStudyGuide_2E.epub' },
+    ],
+  },
+  'nce-ownership-method-2e': {
+    title: 'The NCE Ownership Method — 2nd Edition',
+    subtitle: 'A Complete Study Guide for the National Counselor Examination · For exams on or after July 1, 2027',
+    priceCents: 3499,
+    format: 'Ebook (PDF + EPUB)',
+    files: [
+      { label: 'NCE Ownership Method, 2nd Edition — PDF (1078 pp)', filename: 'NCEOwnershipMethod_2E.pdf' },
+      { label: 'NCE Ownership Method, 2nd Edition — EPUB', filename: 'NCEOwnershipMethod_2E.epub' },
+    ],
+  },
   'beyond-his-hers-and-them': {
     title: 'Beyond His, Hers, and Them',
     subtitle: 'The Blueprint for Queer Love',
